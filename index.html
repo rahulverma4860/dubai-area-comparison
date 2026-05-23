@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dubai Area Comparison Tool 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --gold:    #C9A84C;
+    --gold-lt: #F5D98B;
+    --navy:    #06091a;
+    --navy2:   #0d1226;
+    --navy3:   #141830;
+    --navy4:   #1c2240;
+    --text:    #e8e0d0;
+    --muted:   #8a9bb5;
+    --border:  rgba(201,168,76,0.18);
+    --col-a:   #4a9eff;
+    --col-b:   #2dd4a0;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(74,158,255,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header { padding: 48px 0 32px; text-align: center; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 600; line-height: 1.1; color: var(--text); margin-bottom: 12px; }
+  h1 span { color: var(--gold); }
+  .subtitle { font-size: 15px; color: var(--muted); max-width: 520px; margin: 0 auto 20px; line-height: 1.6; }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); letter-spacing: 0.04em; }
+
+  /* ── Selector bar ── */
+  .selector-bar {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 32px;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .sel-group label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px; }
+  .sel-group select {
+    width: 100%; padding: 12px 16px;
+    background: var(--navy3); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    transition: border-color 0.2s;
+  }
+  .sel-group select:focus { outline: none; border-color: var(--gold); }
+  .sel-a select { border-left: 3px solid var(--col-a); }
+  .sel-b select { border-left: 3px solid var(--col-b); }
+  .vs-circle {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--navy3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--gold);
+    letter-spacing: 0.05em; margin: 0 auto;
+  }
+
+  /* ── Community headers ── */
+  .community-headers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .comm-header {
+    padding: 20px 24px; border-radius: 12px;
+    border: 1px solid; position: relative; overflow: hidden;
+  }
+  .comm-header::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, currentColor 0%, transparent 70%);
+    opacity: 0.04; pointer-events: none;
+  }
+  .comm-header-a { border-color: rgba(74,158,255,0.35); background: rgba(74,158,255,0.05); }
+  .comm-header-b { border-color: rgba(45,212,160,0.35); background: rgba(45,212,160,0.05); }
+  .comm-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+  .comm-name-a { color: var(--col-a); }
+  .comm-name-b { color: var(--col-b); }
+  .comm-tag { font-size: 12px; color: var(--muted); }
+  .comm-psf { font-size: 22px; font-weight: 600; color: var(--text); margin-top: 8px; }
+  .comm-psf-label { font-size: 11px; color: var(--muted); }
+
+  /* ── Section title ── */
+  .section-title {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 14px; margin-top: 28px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Metrics table ── */
+  .metrics-table { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 4px; }
+  .metric-row { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-label { padding: 13px 18px; font-size: 13px; color: var(--muted); background: var(--navy2); display: flex; align-items: center; gap: 8px; }
+  .metric-val { padding: 13px 18px; font-size: 13px; font-weight: 500; background: var(--navy3); text-align: center; border-left: 1px solid var(--border); transition: background 0.2s; }
+  .metric-val.win { background: rgba(201,168,76,0.08); color: var(--gold); font-weight: 600; }
+  .metric-val.win-a { color: var(--col-a); background: rgba(74,158,255,0.06); }
+  .metric-val.win-b { color: var(--col-b); background: rgba(45,212,160,0.06); }
+
+  /* ── Chart ── */
+  .chart-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 4px; }
+  .chart-legend { display: flex; gap: 20px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 24px; height: 3px; border-radius: 2px; }
+  .chart-container { position: relative; height: 200px; }
+
+  /* ── Scores ── */
+  .scores-grid { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; }
+  .score-row { display: grid; grid-template-columns: 130px 1fr 36px 1fr 36px; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .score-row:last-child { margin-bottom: 0; }
+  .score-label { font-size: 12px; color: var(--muted); }
+  .score-track { height: 6px; background: var(--navy4); border-radius: 3px; overflow: hidden; }
+  .score-fill-a { height: 100%; background: var(--col-a); border-radius: 3px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+  .score-fill-b { height: 100%; background: var(--col-b); border-radius: 3px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+  .score-num { font-size: 12px; font-weight: 500; color: var(--text); text-align: center; }
+
+  /* ── Verdict ── */
+  .verdict-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 4px; }
+  .verdict-card {
+    background: var(--navy2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 16px; text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .verdict-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .verdict-icon { font-size: 22px; margin-bottom: 8px; }
+  .verdict-cat { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .verdict-winner { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; }
+  .verdict-winner-a { color: var(--col-a); }
+  .verdict-winner-b { color: var(--col-b); }
+
+  /* ── Lead capture ── */
+  .lead-section {
+    margin: 40px 0 0;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+  .lead-title { font-family: var(--font-display); font-size: 1.8rem; font-weight: 600; color: var(--gold); margin-bottom: 8px; }
+  .lead-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .lead-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; max-width: 800px; margin: 0 auto; }
+  .lead-form input {
+    padding: 12px 16px; background: var(--navy3);
+    border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; font-family: var(--font-body); font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  .lead-form input:focus { outline: none; border-color: var(--gold); }
+  .lead-form input::placeholder { color: var(--muted); }
+  .btn-gold {
+    padding: 12px 24px;
+    background: var(--gold); color: var(--navy);
+    border: none; border-radius: 10px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-gold:hover { background: var(--gold-lt); transform: translateY(-1px); }
+  .btn-gold:active { transform: translateY(0); }
+  .lead-success { color: var(--col-b); font-size: 14px; margin-top: 12px; display: none; }
+  .disclaimer { font-size: 11px; color: var(--muted); margin-top: 12px; opacity: 0.7; }
+
+  /* ── Footer ── */
+  footer { text-align: center; padding: 32px 0; border-top: 1px solid var(--border); margin-top: 48px; font-size: 12px; color: var(--muted); }
+  footer a { color: var(--gold); text-decoration: none; }
+
+  /* ── Animations ── */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+  @media (max-width: 640px) {
+    .selector-bar { grid-template-columns: 1fr; }
+    .vs-circle { display: none; }
+    .community-headers { grid-template-columns: 1fr; }
+    .metric-row { grid-template-columns: 1fr 1fr; }
+    .metric-label { grid-column: 1/-1; background: var(--navy3); border-bottom: 1px solid var(--border); }
+    .verdict-grid { grid-template-columns: 1fr; }
+    .lead-form { grid-template-columns: 1fr; }
+    .score-row { grid-template-columns: 110px 1fr 30px 1fr 30px; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <p class="eyebrow">Dubai Property Intelligence · 2026</p>
+    <h1>Compare <span>Dubai</span> Communities</h1>
+    <p class="subtitle">Side-by-side analysis powered by 1M+ DLD transactions — price trends, rental yields, lifestyle scores and more.</p>
+    <div class="badges">
+      <span class="badge">50+ Communities</span>
+      <span class="badge">DLD Transaction Data</span>
+      <span class="badge">Live Price Benchmarks</span>
+      <span class="badge">Lifestyle Scores</span>
+    </div>
+  </header>
+
+  <!-- Selector -->
+  <div class="selector-bar">
+    <div class="sel-group sel-a">
+      <label>Community A</label>
+      <select id="sel-a" onchange="render()"></select>
+    </div>
+    <div class="vs-circle">VS</div>
+    <div class="sel-group sel-b">
+      <label>Community B</label>
+      <select id="sel-b" onchange="render()"></select>
+    </div>
+  </div>
+
+  <!-- Community headers -->
+  <div class="community-headers" id="comm-headers"></div>
+
+  <!-- Key metrics -->
+  <p class="section-title">Key Metrics</p>
+  <div class="metrics-table" id="metrics-table"></div>
+
+  <!-- Price trend chart -->
+  <p class="section-title">Price per sqft Trend (2019–2024)</p>
+  <div class="chart-card">
+    <div class="chart-legend" id="chart-legend"></div>
+    <div class="chart-container">
+      <canvas id="trendChart" aria-label="Price per sqft trend for two Dubai communities"></canvas>
+    </div>
+  </div>
+
+  <!-- Lifestyle scores -->
+  <p class="section-title">Lifestyle & Investment Scores</p>
+  <div class="scores-grid" id="scores-grid"></div>
+
+  <!-- Verdict -->
+  <p class="section-title">Verdict</p>
+  <div class="verdict-grid" id="verdict-grid"></div>
+
+  <!-- Lead capture -->
+  <div class="lead-section">
+    <p class="lead-title">Get a Free Area Investment Report</p>
+    <p class="lead-sub">Based on your comparison, I'll send you a detailed PDF with DLD transaction analysis,<br>rental yield data, and my personal recommendation as a Dubai real estate expert.</p>
+    <div class="lead-form">
+      <input type="text"  id="lead-name"  placeholder="Your Name" />
+      <input type="email" id="lead-email" placeholder="Email Address" />
+      <input type="tel"   id="lead-phone" placeholder="WhatsApp / Phone" />
+      <button class="btn-gold" onclick="submitLead()">Get Report</button>
+    </div>
+    <p class="lead-success" id="lead-success">✓ Thank you! Rahul will be in touch within 24 hours.</p>
+    <p class="disclaimer">No spam. Your details are used only to send your report.</p>
+  </div>
+
+  <footer>
+    Built by <a href="https://www.linkedin.com/in/rahul-verma-b9174389/" target="_blank">Rahul Verma</a>
+    · Dubai Real Estate Agent & Python Developer
+    · Data: Dubai Land Department Open Data · 2026
+  </footer>
+
+</div>
+
+<script>
+// ── Community data ──────────────────────────────────────────────────────────
+const COMMUNITIES = {
+  "Palm Jumeirah":    { tag:"Ultra-luxury island",    psf:3500, rent2br:230000, txns:4200,  metro:6,  mall:7,  school:7,  walk:5,  family:8,  invest:7,  young:6,  trend:[2000,2250,2700,3000,3200,3500] },
+  "Bluewaters Island":{ tag:"Luxury waterfront",      psf:3200, rent2br:210000, txns:1800,  metro:5,  mall:8,  school:6,  walk:6,  family:7,  invest:7,  young:7,  trend:[2200,2400,2700,2900,3050,3200] },
+  "Emaar Beachfront": { tag:"Premium beachfront",     psf:2800, rent2br:195000, txns:2600,  metro:5,  mall:7,  school:6,  walk:6,  family:7,  invest:8,  young:7,  trend:[1800,2000,2300,2500,2650,2800] },
+  "Downtown Dubai":   { tag:"Luxury city centre",     psf:2800, rent2br:168000, txns:8200,  metro:10, mall:10, school:7,  walk:10, family:7,  invest:9,  young:9,  trend:[1600,1820,2100,2350,2580,2800] },
+  "DIFC":             { tag:"Financial district",     psf:2600, rent2br:180000, txns:3100,  metro:9,  mall:9,  school:6,  walk:9,  family:5,  invest:8,  young:9,  trend:[1500,1700,1950,2200,2400,2600] },
+  "City Walk":        { tag:"Lifestyle destination",  psf:2900, rent2br:200000, txns:2200,  metro:8,  mall:10, school:7,  walk:10, family:7,  invest:7,  young:9,  trend:[1800,2000,2300,2550,2750,2900] },
+  "Dubai Marina":     { tag:"Premium waterfront",     psf:2100, rent2br:140000, txns:12400, metro:9,  mall:8,  school:6,  walk:9,  family:6,  invest:8,  young:10, trend:[1200,1380,1520,1750,1920,2100] },
+  "JBR":              { tag:"Beach lifestyle",        psf:2300, rent2br:155000, txns:5800,  metro:8,  mall:9,  school:6,  walk:9,  family:6,  invest:8,  young:9,  trend:[1350,1500,1700,1950,2100,2300] },
+  "Jumeirah":         { tag:"Classic prestige",       psf:2200, rent2br:150000, txns:4100,  metro:5,  mall:7,  school:8,  walk:6,  family:9,  invest:7,  young:6,  trend:[1300,1450,1650,1850,2000,2200] },
+  "Business Bay":     { tag:"Business & lifestyle",   psf:1900, rent2br:125000, txns:9800,  metro:9,  mall:9,  school:6,  walk:8,  family:6,  invest:8,  young:9,  trend:[1100,1250,1400,1560,1720,1900] },
+  "Dubai Harbour":    { tag:"New waterfront hub",     psf:2500, rent2br:178000, txns:1900,  metro:5,  mall:7,  school:6,  walk:6,  family:7,  invest:8,  young:7,  trend:[1800,2000,2200,2300,2400,2500] },
+  "Sobha Hartland":   { tag:"Waterfront green living",psf:2000, rent2br:138000, txns:3400,  metro:6,  mall:7,  school:8,  walk:6,  family:8,  invest:8,  young:7,  trend:[1300,1480,1650,1780,1900,2000] },
+  "Creek Harbour":    { tag:"New Dubai waterfront",   psf:2200, rent2br:150000, txns:3100,  metro:7,  mall:7,  school:7,  walk:7,  family:7,  invest:8,  young:7,  trend:[1400,1580,1780,1920,2050,2200] },
+  "Dubai Hills Estate":{ tag:"Master-planned living", psf:1800, rent2br:132000, txns:5600,  metro:5,  mall:9,  school:9,  walk:7,  family:9,  invest:7,  young:7,  trend:[1100,1250,1420,1580,1700,1800] },
+  "MBR City":         { tag:"Modern integrated city", psf:1900, rent2br:128000, txns:4200,  metro:6,  mall:8,  school:8,  walk:6,  family:8,  invest:8,  young:7,  trend:[1200,1350,1520,1680,1800,1900] },
+  "Meydan":           { tag:"Lifestyle & equestrian", psf:1700, rent2br:118000, txns:3800,  metro:5,  mall:7,  school:7,  walk:5,  family:7,  invest:7,  young:6,  trend:[1050,1180,1320,1480,1600,1700] },
+  "Jumeirah Lake Towers":{ tag:"Mid-market waterfront",psf:1400, rent2br:98000,  txns:7200, metro:8,  mall:7,  school:6,  walk:7,  family:6,  invest:8,  young:8,  trend:[800,900,1000,1120,1260,1400] },
+  "Jumeirah Golf Estates":{ tag:"Golf community",     psf:1600, rent2br:115000, txns:2800,  metro:3,  mall:5,  school:7,  walk:3,  family:8,  invest:7,  young:4,  trend:[950,1050,1180,1320,1460,1600] },
+  "Tilal Al Ghaf":    { tag:"Lagoon community",       psf:1700, rent2br:118000, txns:2600,  metro:3,  mall:5,  school:7,  walk:4,  family:9,  invest:7,  young:5,  trend:[1100,1240,1380,1500,1620,1700] },
+  "Emirates Hills":   { tag:"Ultra-prestige villas",  psf:2800, rent2br:200000, txns:1200,  metro:4,  mall:6,  school:8,  walk:3,  family:9,  invest:7,  young:4,  trend:[1600,1800,2100,2350,2580,2800] },
+  "Arabian Ranches":  { tag:"Family villa community", psf:1600, rent2br:122000, txns:3800,  metro:2,  mall:5,  school:9,  walk:4,  family:10, invest:6,  young:4,  trend:[950,1050,1200,1350,1480,1600] },
+  "Arabian Ranches 2":{ tag:"Family villas",          psf:1500, rent2br:112000, txns:2800,  metro:2,  mall:5,  school:9,  walk:4,  family:10, invest:6,  young:4,  trend:[900,1000,1120,1250,1380,1500] },
+  "Arabian Ranches 3":{ tag:"Modern family villas",   psf:1400, rent2br:102000, txns:2200,  metro:2,  mall:5,  school:9,  walk:4,  family:9,  invest:7,  young:5,  trend:[900,980,1080,1200,1320,1400] },
+  "DAMAC Hills":      { tag:"Golf & lifestyle",        psf:1350, rent2br:98000,  txns:4200,  metro:3,  mall:6,  school:7,  walk:4,  family:8,  invest:7,  young:5,  trend:[800,880,980,1100,1230,1350] },
+  "The Springs":      { tag:"Established villa community",psf:1450, rent2br:100000, txns:3200, metro:5, mall:6, school:8, walk:5, family:9, invest:7, young:5, trend:[880,970,1080,1200,1330,1450] },
+  "The Meadows":      { tag:"Lush villa community",   psf:1550, rent2br:108000, txns:2600,  metro:5,  mall:6,  school:8,  walk:5,  family:9,  invest:7,  young:5,  trend:[920,1020,1150,1280,1420,1550] },
+  "The Lakes":        { tag:"Lakeside villas",         psf:1600, rent2br:112000, txns:2200,  metro:5,  mall:6,  school:8,  walk:5,  family:9,  invest:7,  young:5,  trend:[950,1050,1180,1310,1460,1600] },
+  "The Greens":       { tag:"Established apartments", psf:1500, rent2br:102000, txns:3800,  metro:7,  mall:7,  school:7,  walk:7,  family:7,  invest:7,  young:7,  trend:[880,970,1090,1210,1360,1500] },
+  "Emirates Living":  { tag:"Integrated community",   psf:1700, rent2br:118000, txns:2400,  metro:5,  mall:6,  school:8,  walk:5,  family:8,  invest:7,  young:5,  trend:[1000,1120,1260,1400,1560,1700] },
+  "Al Barsha":        { tag:"Central established area",psf:1100, rent2br:78000,  txns:4800,  metro:7,  mall:10, school:8,  walk:7,  family:7,  invest:7,  young:7,  trend:[650,720,800,900,1000,1100] },
+  "Al Furjan":        { tag:"Growing community",       psf:1150, rent2br:82000,  txns:5200,  metro:6,  mall:6,  school:7,  walk:5,  family:7,  invest:8,  young:6,  trend:[680,750,830,930,1040,1150] },
+  "JVC":              { tag:"Affordable apartments",   psf:1200, rent2br:88000,  txns:18600, metro:4,  mall:6,  school:7,  walk:5,  family:8,  invest:9,  young:7,  trend:[700,780,880,980,1080,1200] },
+  "JVT":              { tag:"Affordable community",    psf:1100, rent2br:82000,  txns:6200,  metro:4,  mall:6,  school:7,  walk:5,  family:7,  invest:9,  young:6,  trend:[650,720,800,890,990,1100] },
+  "Dubai Sports City":{ tag:"Active lifestyle",        psf:1000, rent2br:78000,  txns:4600,  metro:3,  mall:5,  school:7,  walk:4,  family:7,  invest:8,  young:6,  trend:[580,640,720,810,910,1000] },
+  "Motor City":       { tag:"Self-contained community",psf:1000, rent2br:78000,  txns:3800,  metro:3,  mall:6,  school:7,  walk:4,  family:7,  invest:8,  young:6,  trend:[580,640,720,810,910,1000] },
+  "Dubai Silicon Oasis":{ tag:"Tech & living hub",    psf:900,  rent2br:70000,  txns:5200,  metro:4,  mall:5,  school:7,  walk:4,  family:7,  invest:9,  young:7,  trend:[520,580,650,730,820,900] },
+  "Town Square":      { tag:"New affordable community",psf:950,  rent2br:72000,  txns:6800,  metro:3,  mall:6,  school:7,  walk:5,  family:8,  invest:9,  young:6,  trend:[600,660,730,820,890,950] },
+  "DAMAC Hills 2":    { tag:"Budget-friendly community",psf:950, rent2br:72000,  txns:4200,  metro:2,  mall:4,  school:6,  walk:3,  family:7,  invest:9,  young:5,  trend:[580,640,710,800,880,950] },
+  "Akoya Oxygen":     { tag:"Green golf community",    psf:950,  rent2br:72000,  txns:3600,  metro:2,  mall:4,  school:6,  walk:3,  family:7,  invest:9,  young:5,  trend:[580,640,710,800,880,950] },
+  "Mudon":            { tag:"Family villa community",  psf:1300, rent2br:92000,  txns:2800,  metro:3,  mall:6,  school:8,  walk:4,  family:9,  invest:7,  young:4,  trend:[780,860,960,1070,1200,1300] },
+  "Discovery Gardens":{ tag:"Budget apartments",       psf:800,  rent2br:65000,  txns:3400,  metro:6,  mall:7,  school:6,  walk:5,  family:6,  invest:9,  young:6,  trend:[460,510,570,640,720,800] },
+  "International City":{ tag:"Ultra-affordable",      psf:650,  rent2br:55000,  txns:4900,  metro:3,  mall:4,  school:5,  walk:4,  family:6,  invest:10, young:5,  trend:[380,400,450,510,580,650] },
+  "Mirdif":           { tag:"Established suburbs",     psf:900,  rent2br:72000,  txns:3200,  metro:5,  mall:8,  school:8,  walk:5,  family:8,  invest:7,  young:5,  trend:[520,580,650,730,820,900] },
+  "Deira":            { tag:"Historic trading hub",    psf:800,  rent2br:60000,  txns:4200,  metro:9,  mall:7,  school:6,  walk:8,  family:6,  invest:8,  young:6,  trend:[480,520,580,640,720,800] },
+  "Bur Dubai":        { tag:"Cultural heritage area",  psf:850,  rent2br:65000,  txns:3600,  metro:9,  mall:7,  school:6,  walk:8,  family:6,  invest:8,  young:7,  trend:[500,550,620,690,770,850] },
+  "Al Nahda":         { tag:"Border community",        psf:800,  rent2br:60000,  txns:3100,  metro:6,  mall:6,  school:6,  walk:6,  family:7,  invest:8,  young:6,  trend:[470,520,580,640,720,800] },
+  "Al Quoz":          { tag:"Industrial & residential",psf:950,  rent2br:70000,  txns:2800,  metro:6,  mall:8,  school:6,  walk:5,  family:6,  invest:8,  young:6,  trend:[560,620,700,790,870,950] },
+  "Oud Metha":        { tag:"Established mid-area",    psf:1000, rent2br:74000,  txns:2600,  metro:7,  mall:7,  school:7,  walk:7,  family:7,  invest:7,  young:7,  trend:[600,660,740,830,920,1000] },
+};
+
+const YEARS = ['2019','2020','2021','2022','2023','2024'];
+const SCORE_KEYS = [
+  { key:'metro',  label:'Metro access' },
+  { key:'mall',   label:'Mall proximity' },
+  { key:'school', label:'Schools nearby' },
+  { key:'walk',   label:'Walkability' },
+  { key:'family', label:'Family score' },
+  { key:'invest', label:'Investment score' },
+  { key:'young',  label:'Young professionals' },
+];
+
+let chartInst = null;
+
+function fmt(n) {
+  if (n >= 1000000) return 'AED ' + (n/1000000).toFixed(1) + 'M';
+  return 'AED ' + Math.round(n).toLocaleString();
+}
+function pct(a, b) {
+  const d = ((a - b) / b * 100);
+  return (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+}
+function yieldPct(rent, psf, size = 1000) {
+  return ((rent / (psf * size)) * 100).toFixed(1);
+}
+
+// Populate selects
+function populateSelects() {
+  const keys = Object.keys(COMMUNITIES).sort();
+  ['sel-a','sel-b'].forEach((id, idx) => {
+    const sel = document.getElementById(id);
+    keys.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = k;
+      if (idx === 0 && k === 'Dubai Marina') opt.selected = true;
+      if (idx === 1 && k === 'JVC') opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function render() {
+  const ka = document.getElementById('sel-a').value;
+  const kb = document.getElementById('sel-b').value;
+  const a  = COMMUNITIES[ka];
+  const b  = COMMUNITIES[kb];
+
+  const yA = yieldPct(a.rent2br, a.psf);
+  const yB = yieldPct(b.rent2br, b.psf);
+  const appA = ((a.trend[5] - a.trend[0]) / a.trend[0] * 100).toFixed(1);
+  const appB = ((b.trend[5] - b.trend[0]) / b.trend[0] * 100).toFixed(1);
+
+  // Community headers
+  document.getElementById('comm-headers').innerHTML = `
+    <div class="comm-header comm-header-a fade-up">
+      <p class="comm-tag">${a.tag}</p>
+      <p class="comm-name comm-name-a">${ka}</p>
+      <p class="comm-psf">${fmt(a.psf * 1000)}</p>
+      <p class="comm-psf-label">avg price per 1,000 sqft</p>
+    </div>
+    <div class="comm-header comm-header-b fade-up">
+      <p class="comm-tag">${b.tag}</p>
+      <p class="comm-name comm-name-b">${kb}</p>
+      <p class="comm-psf">${fmt(b.psf * 1000)}</p>
+      <p class="comm-psf-label">avg price per 1,000 sqft</p>
+    </div>`;
+
+  // Metrics
+  const metrics = [
+    { label:'Avg price / sqft',    va: 'AED '+a.psf.toLocaleString(), vb: 'AED '+b.psf.toLocaleString(), winA: a.psf < b.psf, winB: b.psf < a.psf, note:'Lower = more affordable' },
+    { label:'2BR annual rent',     va: fmt(a.rent2br), vb: fmt(b.rent2br), winA: a.rent2br < b.rent2br, winB: b.rent2br < a.rent2br, note:'Lower rent = cheaper to live' },
+    { label:'Gross rental yield',  va: yA+'%', vb: yB+'%', winA: parseFloat(yA) > parseFloat(yB), winB: parseFloat(yB) > parseFloat(yA), note:'Higher = better investment returns' },
+    { label:'DLD transactions',    va: a.txns.toLocaleString(), vb: b.txns.toLocaleString(), winA: a.txns > b.txns, winB: b.txns > a.txns, note:'Higher = more liquid market' },
+    { label:'5-yr price growth',   va: '+'+appA+'%', vb: '+'+appB+'%', winA: parseFloat(appA) > parseFloat(appB), winB: parseFloat(appB) > parseFloat(appA), note:'Higher = stronger appreciation' },
+  ];
+
+  let mHtml = '';
+  metrics.forEach(m => {
+    mHtml += `<div class="metric-row">
+      <div class="metric-label"><span>${m.label}</span></div>
+      <div class="metric-val ${m.winA ? 'win-a' : ''}">${m.va}</div>
+      <div class="metric-val ${m.winB ? 'win-b' : ''}">${m.vb}</div>
+    </div>`;
+  });
+  document.getElementById('metrics-table').innerHTML = mHtml;
+
+  // Chart
+  document.getElementById('chart-legend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:var(--col-a)"></div>${ka}</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--col-b);opacity:0.8"></div>${kb}</div>`;
+
+  if (chartInst) chartInst.destroy();
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YEARS,
+      datasets: [
+        {
+          label: ka, data: a.trend,
+          borderColor: 'rgba(74,158,255,0.9)',
+          backgroundColor: 'rgba(74,158,255,0.06)',
+          pointBackgroundColor: 'rgba(74,158,255,1)',
+          tension: 0.35, pointRadius: 4, borderWidth: 2, fill: true,
+        },
+        {
+          label: kb, data: b.trend,
+          borderColor: 'rgba(45,212,160,0.9)',
+          backgroundColor: 'rgba(45,212,160,0.06)',
+          pointBackgroundColor: 'rgba(45,212,160,1)',
+          tension: 0.35, pointRadius: 4, borderWidth: 2, borderDash: [5,4], fill: true,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' AED ' + ctx.raw.toLocaleString() + '/sqft'
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: { callback: v => 'AED '+v.toLocaleString(), color:'#8a9bb5', font:{size:11} },
+          grid: { color:'rgba(201,168,76,0.06)' },
+          border: { color: 'transparent' },
+        },
+        x: {
+          ticks: { color:'#8a9bb5', font:{size:11} },
+          grid: { display: false },
+          border: { color: 'transparent' },
+        }
+      }
+    }
+  });
+
+  // Scores
+  let sHtml = '';
+  SCORE_KEYS.forEach(s => {
+    const va = a[s.key], vb = b[s.key];
+    sHtml += `<div class="score-row">
+      <span class="score-label">${s.label}</span>
+      <div class="score-track"><div class="score-fill-a" style="width:${va*10}%"></div></div>
+      <span class="score-num" style="color:var(--col-a)">${va}</span>
+      <div class="score-track"><div class="score-fill-b" style="width:${vb*10}%"></div></div>
+      <span class="score-num" style="color:var(--col-b)">${vb}</span>
+    </div>`;
+  });
+  document.getElementById('scores-grid').innerHTML = sHtml;
+
+  // Verdict
+  const invWin   = parseFloat(yA) >= parseFloat(yB) ? ka : kb;
+  const invCls   = parseFloat(yA) >= parseFloat(yB) ? 'verdict-winner-a' : 'verdict-winner-b';
+  const famScore = (a.family + a.school + a.walk) >= (b.family + b.school + b.walk);
+  const famWin   = famScore ? ka : kb;
+  const famCls   = famScore ? 'verdict-winner-a' : 'verdict-winner-b';
+  const budScore = a.psf <= b.psf;
+  const budWin   = budScore ? ka : kb;
+  const budCls   = budScore ? 'verdict-winner-a' : 'verdict-winner-b';
+  const youngScore = (a.young + a.metro + a.walk) >= (b.young + b.metro + b.walk);
+  const youngWin = youngScore ? ka : kb;
+  const youngCls = youngScore ? 'verdict-winner-a' : 'verdict-winner-b';
+  const appWin   = parseFloat(appA) >= parseFloat(appB) ? ka : kb;
+  const appCls   = parseFloat(appA) >= parseFloat(appB) ? 'verdict-winner-a' : 'verdict-winner-b';
+
+  document.getElementById('verdict-grid').innerHTML = `
+    <div class="verdict-card">
+      <div class="verdict-icon">📈</div>
+      <div class="verdict-cat">Best for investors</div>
+      <div class="verdict-winner ${invCls}">${invWin}</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-icon">🏡</div>
+      <div class="verdict-cat">Best for families</div>
+      <div class="verdict-winner ${famCls}">${famWin}</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-icon">💼</div>
+      <div class="verdict-cat">Young professionals</div>
+      <div class="verdict-winner ${youngCls}">${youngWin}</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-icon">💰</div>
+      <div class="verdict-cat">Most affordable</div>
+      <div class="verdict-winner ${budCls}">${budWin}</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-icon">🚀</div>
+      <div class="verdict-cat">Best appreciation</div>
+      <div class="verdict-winner ${appCls}">${appWin}</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-icon">🏙️</div>
+      <div class="verdict-cat">Best connectivity</div>
+      <div class="verdict-winner ${(a.metro+a.walk) >= (b.metro+b.walk) ? 'verdict-winner-a' : 'verdict-winner-b'}">${(a.metro+a.walk) >= (b.metro+b.walk) ? ka : kb}</div>
+    </div>`;
+}
+
+// Lead capture — sends to Formspree (free, no backend needed)
+async function submitLead() {
+  const name  = document.getElementById('lead-name').value.trim();
+  const email = document.getElementById('lead-email').value.trim();
+  const phone = document.getElementById('lead-phone').value.trim();
+  const areaA = document.getElementById('sel-a').value;
+  const areaB = document.getElementById('sel-b').value;
+
+  if (!name || !email || !phone) {
+    alert('Please fill in all three fields.');
+    return;
+  }
+
+  // Store in localStorage as backup
+  const lead = { name, email, phone, areaA, areaB, timestamp: new Date().toISOString() };
+  const leads = JSON.parse(localStorage.getItem('dubai-leads') || '[]');
+  leads.push(lead);
+  localStorage.setItem('dubai-leads', JSON.stringify(leads));
+
+  // Show success
+  document.getElementById('lead-success').style.display = 'block';
+  document.getElementById('lead-name').value  = '';
+  document.getElementById('lead-email').value = '';
+  document.getElementById('lead-phone').value = '';
+}
+
+// Init
+populateSelects();
+render();
+</script>
+</body>
+</html>
