@@ -15,15 +15,10 @@ RAPIDAPI_HOST  = "uae-real-estate3.p.rapidapi.com"
 
 # Split CSV parts — each under 25MB, no virus warning
 GDRIVE_PARTS = [
-    "1pVHch0x4VleJ2UM04i-3tavDk6BiTR7J",
-    "1X-5kQKkDkEKz1yLYTK3vZCK9052y-WuB",
-    "1bkznrgih-ErIqjOH0YkXX_B_dwOnwvLo",
-    "191xHGdbF9bY6WQoeueeuVO5QGMkHifxl",
-    "1FcexDRF3gvmAUiQrP0W2gg4zW9fvboBM",
-    "1bDRYkUnI5rMLgd5PVeLE2lCrWgmwzlld",
-    "1cM-XrRaJkxlyBalziuVrGyUQ5HIVR1GR",
-    "13__LTZA920dgj_z8UEjZL0rTUP9s1_Kn",
-    "1MQKCkzHu5evOaW0CsBcQ7ElbkG5BNBoM",
+    "1QT7bxfWGFQznE02FSDOTNIKzkj7p4n2Q",
+    "1Gj62X41xjDmJfCOhKUgfDJF1i7A6pEAe",
+    "1QNnDQU4wnrVCBobmSjcep8Lf5XUCEVd6",
+    "1OlbultfiKvr00D-lSuSIq6RcgR2TqEPR",
 ]
 
 st.set_page_config(
