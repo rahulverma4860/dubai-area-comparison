@@ -82,9 +82,15 @@ def download_csv_if_needed():
 
             # Step 2: Check if it is a virus warning page — extract real download URL
             if "uc-download-link" in html or "virus scan warning" in html.lower():
-                # Extract uuid from the form
-                uuid_match = _re.search(r'name="uuid"\s+value="([^"]+)"', html)
-                uuid_val   = uuid_match.group(1) if uuid_match else ""
+                # Extract uuid — tested against real Google Drive HTML
+                uuid_val = ""
+                m = _re.search(r'name="uuid" value="([^"]+)"', html)
+                if not m:
+                    m = _re.search(r'name="uuid"[^>]*value="([^"]+)"', html)
+                if not m:
+                    # Last resort: find any UUID-format string in the HTML
+                    m = _re.search(r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", html)
+                uuid_val = m.group(0) if m else ""
                 dl_url = (
                     f"https://drive.usercontent.google.com/download"
                     f"?id={GDRIVE_FILE_ID}&export=download&confirm=t&uuid={uuid_val}"
