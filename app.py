@@ -68,21 +68,40 @@ st.markdown("""
 def download_csv_if_needed():
     if not os.path.exists("transactions.csv"):
         try:
+            import re as _re
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode    = ssl.CERT_NONE
-            url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}&confirm=t"
             st.info("📥 Downloading DLD data... this may take a minute on first load.")
-            with urllib.request.urlopen(url, context=ctx) as r:
-                data = r.read()
-            # Verify it is a real CSV not an HTML error/confirmation page
-            first = data[:10].lower()
-            if b"<!doc" in first or b"<html" in first or len(data) < 10000:
-                st.warning("Google Drive returned a confirmation page. Trying direct export...")
-                # Try alternate URL with different confirm token
-                url2 = f"https://drive.usercontent.google.com/download?id={GDRIVE_FILE_ID}&export=download&confirm=t"
-                with urllib.request.urlopen(url2, context=ctx) as r2:
-                    data = r2.read()
+
+            # Step 1: Get the virus-warning page
+            url1 = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
+            req  = urllib.request.Request(url1, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, context=ctx) as r:
+                html = r.read().decode("utf-8", errors="ignore")
+
+            # Step 2: Check if it is a virus warning page — extract real download URL
+            if "uc-download-link" in html or "virus scan warning" in html.lower():
+                # Extract uuid from the form
+                uuid_match = _re.search(r'name="uuid"\s+value="([^"]+)"', html)
+                uuid_val   = uuid_match.group(1) if uuid_match else ""
+                dl_url = (
+                    f"https://drive.usercontent.google.com/download"
+                    f"?id={GDRIVE_FILE_ID}&export=download&confirm=t&uuid={uuid_val}"
+                )
+            else:
+                dl_url = url1
+
+            # Step 3: Download the actual file
+            req2 = urllib.request.Request(dl_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req2, context=ctx) as r2:
+                data = r2.read()
+
+            # Step 4: Verify it looks like a CSV
+            if len(data) < 10000 or (data[:5].lower() in [b"<!doc", b"<html"]):
+                st.error("Download failed — Google Drive returned an HTML page instead of the CSV. Please check the file sharing settings.")
+                return
+
             with open("transactions.csv", "wb") as f:
                 f.write(data)
             st.rerun()
