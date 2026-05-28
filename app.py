@@ -12,7 +12,19 @@ load_dotenv()
 
 RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST  = "uae-real-estate3.p.rapidapi.com"
-GDRIVE_FILE_ID = os.getenv("GDRIVE_FILE_ID", "1HqLSBnCbNqbVGDBlX1BuQs1vMVLG8Buh")
+
+# Split CSV parts — each under 25MB, no virus warning
+GDRIVE_PARTS = [
+    "1pVHch0x4VleJ2UM04i-3tavDk6BiTR7J",
+    "1X-5kQKkDkEKz1yLYTK3vZCK9052y-WuB",
+    "1bkznrgih-ErIqjOH0YkXX_B_dwOnwvLo",
+    "191xHGdbF9bY6WQoeueeuVO5QGMkHifxl",
+    "1FcexDRF3gvmAUiQrP0W2gg4zW9fvboBM",
+    "1bDRYkUnI5rMLgd5PVeLE2lCrWgmwzlld",
+    "1cM-XrRaJkxlyBalziuVrGyUQ5HIVR1GR",
+    "13__LTZA920dgj_z8UEjZL0rTUP9s1_Kn",
+    "1MQKCkzHu5evOaW0CsBcQ7ElbkG5BNBoM",
+]
 
 st.set_page_config(
     page_title="Dubai Area Comparison Tool 2026",
@@ -67,52 +79,43 @@ st.markdown("""
 # ── Download CSV ───────────────────────────────────────────────────────────────
 def download_csv_if_needed():
     if not os.path.exists("transactions.csv"):
-        try:
-            import re as _re
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode    = ssl.CERT_NONE
-            st.info("📥 Downloading DLD data... this may take a minute on first load.")
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode    = ssl.CERT_NONE
 
-            # Step 1: Get the virus-warning page
-            url1 = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
-            req  = urllib.request.Request(url1, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, context=ctx) as r:
-                html = r.read().decode("utf-8", errors="ignore")
+        progress = st.progress(0, text="📥 Downloading DLD data (part 0/9)...")
+        parts = []
 
-            # Step 2: Check if it is a virus warning page — extract real download URL
-            if "uc-download-link" in html or "virus scan warning" in html.lower():
-                # Extract uuid — tested against real Google Drive HTML
-                uuid_val = ""
-                m = _re.search(r'name="uuid" value="([^"]+)"', html)
-                if not m:
-                    m = _re.search(r'name="uuid"[^>]*value="([^"]+)"', html)
-                if not m:
-                    # Last resort: find any UUID-format string in the HTML
-                    m = _re.search(r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", html)
-                uuid_val = m.group(0) if m else ""
-                dl_url = (
-                    f"https://drive.usercontent.google.com/download"
-                    f"?id={GDRIVE_FILE_ID}&export=download&confirm=t&uuid={uuid_val}"
-                )
-            else:
-                dl_url = url1
-
-            # Step 3: Download the actual file
-            req2 = urllib.request.Request(dl_url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req2, context=ctx) as r2:
-                data = r2.read()
-
-            # Step 4: Verify it looks like a CSV
-            if len(data) < 10000 or (data[:5].lower() in [b"<!doc", b"<html"]):
-                st.error("Download failed — Google Drive returned an HTML page instead of the CSV. Please check the file sharing settings.")
+        for i, file_id in enumerate(GDRIVE_PARTS):
+            try:
+                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, context=ctx) as r:
+                    data = r.read()
+                # Each part is small so no virus warning — verify it is CSV
+                if len(data) < 1000 or data[:1].lower() in [b"<"]:
+                    st.error(f"Part {i+1} download failed — got HTML instead of CSV.")
+                    return
+                parts.append(data)
+                progress.progress((i + 1) / len(GDRIVE_PARTS),
+                                   text=f"📥 Downloading DLD data (part {i+1}/{len(GDRIVE_PARTS)})...")
+            except Exception as e:
+                st.error(f"Failed to download part {i+1}: {e}")
                 return
 
+        progress.progress(1.0, text="💾 Merging and saving...")
+        try:
+            # Write part 1 with header, rest without header
             with open("transactions.csv", "wb") as f:
-                f.write(data)
+                f.write(parts[0])
+                for part in parts[1:]:
+                    # Skip the header line of subsequent parts
+                    newline_idx = part.index(10)  # 10 = ord("\n")
+                    f.write(part[newline_idx + 1:])
+            progress.empty()
             st.rerun()
         except Exception as e:
-            st.warning(f"Could not download DLD data: {e}")
+            st.error(f"Failed to merge parts: {e}")
 
 # ── Load & process DLD data ────────────────────────────────────────────────────
 @st.cache_data
