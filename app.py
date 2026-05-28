@@ -217,6 +217,12 @@ def fmt(n):
 # APP
 # ══════════════════════════════════════════════════════════════════════════════
 download_csv_if_needed()
+
+# Debug: show file status
+if not os.path.exists("transactions.csv"):
+    st.error("❌ transactions.csv still not found after download attempt. Check logs above for errors.")
+    st.stop()
+
 dld = load_dld()
 
 st.markdown("""
