@@ -8,18 +8,20 @@ import ssl
 import urllib.request
 from dotenv import load_dotenv
 
+# Install kaggle if not present
+try:
+    import kaggle
+except ImportError:
+    os.system("pip install kaggle -q")
+    import kaggle
+
 load_dotenv()
 
 RAPIDAPI_KEY   = os.getenv("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST  = "uae-real-estate3.p.rapidapi.com"
 
-# Split CSV parts — each under 25MB, no virus warning
-GDRIVE_PARTS = [
-    "1QT7bxfWGFQznE02FSDOTNIKzkj7p4n2Q",
-    "1Gj62X41xjDmJfCOhKUgfDJF1i7A6pEAe",
-    "1QNnDQU4wnrVCBobmSjcep8Lf5XUCEVd6",
-    "1OlbultfiKvr00D-lSuSIq6RcgR2TqEPR",
-]
+# Kaggle dataset for DLD transactions
+KAGGLE_DATASET = "alexefimik/dubai-real-estate-transactions-dataset"
 
 st.set_page_config(
     page_title="Dubai Area Comparison Tool 2026",
@@ -74,43 +76,28 @@ st.markdown("""
 # ── Download CSV ───────────────────────────────────────────────────────────────
 def download_csv_if_needed():
     if not os.path.exists("transactions.csv"):
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode    = ssl.CERT_NONE
-
-        progress = st.progress(0, text="📥 Downloading DLD data (part 0/9)...")
-        parts = []
-
-        for i, file_id in enumerate(GDRIVE_PARTS):
-            try:
-                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, context=ctx) as r:
-                    data = r.read()
-                # Each part is small so no virus warning — verify it is CSV
-                if len(data) < 1000 or data[:1].lower() in [b"<"]:
-                    st.error(f"Part {i+1} download failed — got HTML instead of CSV.")
-                    return
-                parts.append(data)
-                progress.progress((i + 1) / len(GDRIVE_PARTS),
-                                   text=f"📥 Downloading DLD data (part {i+1}/{len(GDRIVE_PARTS)})...")
-            except Exception as e:
-                st.error(f"Failed to download part {i+1}: {e}")
-                return
-
-        progress.progress(1.0, text="💾 Merging and saving...")
         try:
-            # Write part 1 with header, rest without header
-            with open("transactions.csv", "wb") as f:
-                f.write(parts[0])
-                for part in parts[1:]:
-                    # Skip the header line of subsequent parts
-                    newline_idx = part.index(10)  # 10 = ord("\n")
-                    f.write(part[newline_idx + 1:])
-            progress.empty()
+            import kaggle
+            st.info("📥 Downloading DLD data from Kaggle... this may take a minute.")
+            os.environ["KAGGLE_USERNAME"] = os.getenv("KAGGLE_USERNAME", "")
+            os.environ["KAGGLE_KEY"]      = os.getenv("KAGGLE_KEY", "")
+            # Download dataset
+            kaggle.api.authenticate()
+            kaggle.api.dataset_download_files(
+                "alexefimik/dubai-real-estate-transactions-dataset",
+                path=".",
+                unzip=True
+            )
+            # Rename downloaded file if needed
+            for f in os.listdir("."):
+                if f.endswith(".csv") and f != "transactions.csv" and "transaction" in f.lower():
+                    os.rename(f, "transactions.csv")
+                    break
             st.rerun()
         except Exception as e:
-            st.error(f"Failed to merge parts: {e}")
+            st.error(f"❌ Kaggle download failed: {type(e).__name__}: {e}")
+            import traceback
+            st.code(traceback.format_exc())
 
 # ── Load & process DLD data ────────────────────────────────────────────────────
 @st.cache_data
@@ -217,11 +204,6 @@ def fmt(n):
 # APP
 # ══════════════════════════════════════════════════════════════════════════════
 download_csv_if_needed()
-
-# Debug: show file status
-if not os.path.exists("transactions.csv"):
-    st.error("❌ transactions.csv still not found after download attempt. Check logs above for errors.")
-    st.stop()
 
 dld = load_dld()
 
