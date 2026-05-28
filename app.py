@@ -73,8 +73,18 @@ def download_csv_if_needed():
             ctx.verify_mode    = ssl.CERT_NONE
             url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}&confirm=t"
             st.info("📥 Downloading DLD data... this may take a minute on first load.")
-            with urllib.request.urlopen(url, context=ctx) as r, open("transactions.csv","wb") as f:
-                f.write(r.read())
+            with urllib.request.urlopen(url, context=ctx) as r:
+                data = r.read()
+            # Verify it is a real CSV not an HTML error/confirmation page
+            first = data[:10].lower()
+            if b"<!doc" in first or b"<html" in first or len(data) < 10000:
+                st.warning("Google Drive returned a confirmation page. Trying direct export...")
+                # Try alternate URL with different confirm token
+                url2 = f"https://drive.usercontent.google.com/download?id={GDRIVE_FILE_ID}&export=download&confirm=t"
+                with urllib.request.urlopen(url2, context=ctx) as r2:
+                    data = r2.read()
+            with open("transactions.csv", "wb") as f:
+                f.write(data)
             st.rerun()
         except Exception as e:
             st.warning(f"Could not download DLD data: {e}")
@@ -85,17 +95,20 @@ def load_dld():
     if not os.path.exists("transactions.csv"):
         return None
     df = pd.read_csv("transactions.csv", low_memory=False)
-    # Rename instance_date first before anything else
-    if "instance_date" in df.columns:
-        df = df.rename(columns={"instance_date": "date"})
-
-    df = df.rename(columns={
-        "area_name_en":  "area",
-        "procedure_area":"size_sqft",
-        "actual_worth":  "price_aed",
-        "trans_group_en":"trans_type",
-    })
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    # Normalise all column names first
+    df.columns = df.columns.str.strip()
+    # Rename known DLD columns
+    rename_map = {}
+    for c in df.columns:
+        if c == "area_name_en":   rename_map[c] = "area"
+        if c == "procedure_area": rename_map[c] = "size_sqft"
+        if c == "actual_worth":   rename_map[c] = "price_aed"
+        if c == "instance_date":  rename_map[c] = "date"
+        if c == "trans_group_en": rename_map[c] = "trans_type"
+    df = df.rename(columns=rename_map)
+    if "date" not in df.columns:
+        st.error(f"Date column not found. Available columns: {list(df.columns[:10])}")
+        return None
     df["date"]      = pd.to_datetime(df["date"], errors="coerce")
     df["year"]      = df["date"].dt.year
     df["size_sqft"] = pd.to_numeric(df["size_sqft"], errors="coerce")
