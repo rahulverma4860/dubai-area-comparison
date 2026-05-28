@@ -85,13 +85,17 @@ def load_dld():
     if not os.path.exists("transactions.csv"):
         return None
     df = pd.read_csv("transactions.csv", low_memory=False)
+    # Rename instance_date first before anything else
+    if "instance_date" in df.columns:
+        df = df.rename(columns={"instance_date": "date"})
+
     df = df.rename(columns={
         "area_name_en":  "area",
         "procedure_area":"size_sqft",
         "actual_worth":  "price_aed",
-        "instance_date": "date",
         "trans_group_en":"trans_type",
     })
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df["date"]      = pd.to_datetime(df["date"], errors="coerce")
     df["year"]      = df["date"].dt.year
     df["size_sqft"] = pd.to_numeric(df["size_sqft"], errors="coerce")
