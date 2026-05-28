@@ -129,8 +129,10 @@ def load_dld():
     # Filter out unrealistic values
     df = df[(df["price_aed"] > 100000) & (df["price_aed"] < 200000000)]
     df = df[(df["size_sqft"] > 100) & (df["size_sqft"] < 50000)]
+    # procedure_area is in sqm — convert to sqft
+    df["size_sqft"] = df["size_sqft"] * 10.764
     df["psf"] = df["price_aed"] / df["size_sqft"]
-    # Remove outlier psf values (below AED 200 or above AED 10,000)
+    # Remove outlier psf values (below AED 200 or above AED 10,000/sqft)
     df = df[(df["psf"] >= 200) & (df["psf"] <= 10000)]
     return df
 
