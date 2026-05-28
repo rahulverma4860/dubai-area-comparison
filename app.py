@@ -123,24 +123,41 @@ def load_dld():
     df["year"]      = df["date"].dt.year
     df["size_sqft"] = pd.to_numeric(df["size_sqft"], errors="coerce")
     df["price_aed"] = pd.to_numeric(df["price_aed"], errors="coerce")
-    df = df[df["trans_type"].str.contains("Sale", case=False, na=False)]
+    # Keep only Sales — exclude Mortgages and Gifts
+    df = df[df["trans_type"].str.strip() == "Sales"]
     df = df.dropna(subset=["price_aed","size_sqft","area"])
-    df = df[(df["price_aed"] > 50000) & (df["size_sqft"] > 50)]
+    # Filter out unrealistic values
+    df = df[(df["price_aed"] > 100000) & (df["price_aed"] < 200000000)]
+    df = df[(df["size_sqft"] > 100) & (df["size_sqft"] < 50000)]
     df["psf"] = df["price_aed"] / df["size_sqft"]
+    # Remove outlier psf values (below AED 200 or above AED 10,000)
+    df = df[(df["psf"] >= 200) & (df["psf"] <= 10000)]
     return df
 
 @st.cache_data
 def get_community_stats(df):
     """Returns per-area stats: avg_psf, median_psf, txn_count, min_price, max_price, avg_price."""
-    stats = (df.groupby("area").agg(
-        avg_psf    = ("psf",     "mean"),
-        median_psf = ("psf",     "median"),
-        txn_count  = ("psf",     "count"),
+    # Use last 2 years for price stats — more current
+    max_year = df["year"].max()
+    recent   = df[df["year"] >= max_year - 1]
+    if len(recent) < 1000:
+        recent = df  # fallback if not enough recent data
+
+    stats = (recent.groupby("area").agg(
+        avg_psf    = ("psf",      "mean"),
+        median_psf = ("psf",      "median"),
+        txn_count  = ("psf",      "count"),
         avg_price  = ("price_aed","mean"),
         min_price  = ("price_aed", lambda x: x.quantile(0.10)),
         max_price  = ("price_aed", lambda x: x.quantile(0.90)),
     ).reset_index())
+    # Need at least 20 recent transactions
     stats = stats[stats["txn_count"] >= 20]
+
+    # All-time transaction count for display
+    all_txns = df.groupby("area").size().reset_index(name="all_txn_count")
+    stats    = stats.merge(all_txns, on="area", how="left")
+
     return stats.set_index("area").to_dict("index")
 
 @st.cache_data
@@ -273,13 +290,13 @@ with hc1:
     st.markdown(f"""
     <div class="comm-header-a">
       <p class="comm-name-a">{area_a}</p>
-      <p class="comm-tag">Based on {sa['txn_count']:,} DLD transactions</p>
+      <p class="comm-tag">Based on {sa.get('all_txn_count', sa['txn_count']):,} DLD transactions (last 2 yrs for pricing)</p>
     </div>""", unsafe_allow_html=True)
 with hc2:
     st.markdown(f"""
     <div class="comm-header-b">
       <p class="comm-name-b">{area_b}</p>
-      <p class="comm-tag">Based on {sb['txn_count']:,} DLD transactions</p>
+      <p class="comm-tag">Based on {sb.get('all_txn_count', sb['txn_count']):,} DLD transactions (last 2 yrs for pricing)</p>
     </div>""", unsafe_allow_html=True)
 
 # ── Key metrics ────────────────────────────────────────────────────────────────
